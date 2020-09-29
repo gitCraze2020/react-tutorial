@@ -35,11 +35,31 @@ const Jobs: React.FC<jobsProps> = ({}) => {
         <Wrapper sizeProfile="small">
 
         <Formik initialValues={{id: -1, name: "job name here"}}
-            onSubmit={(submitValues) => {
+            // onSubmit={(submitValues) => {
+            // changed this to 'async', in coordination with adding 'await' on the hook function call below
+            onSubmit={async (submitValues) => {
                 console.log('submitting: ', submitValues);
                 const sId: string = `${submitValues.id}`; // the initial value forced to be string
                 const jobId: number = parseInt( sId ); // convert string to int
-                updateOneJob(
+                // note: the below 'return' means returning a Promise,
+                // and it will stop the submit button from spinning after clicking it
+                //                return updateOneJob(..)
+                //
+                //
+                // notice that the hook function
+                //                const response = updateOneJob(
+                // returns a type <any> by default
+                //                const response: Promise<OperationResult<any>>
+                // which is not very useful when you want to get specific responses
+                // to handle (like errors), which our graphql resolver returns and
+                // would fall between the cracks unless we do something with it
+                //
+                // this is why we use the graphql-code-generator package.
+                // it will create hook functions with properly defined return types
+                // that we can use in the forms here
+                // see http://graphql-code-generator.com/docs/getting-started/installation
+                //
+                const response = await updateOneJob(
                     {"id": jobId,
                     "name": submitValues.name}
                 );

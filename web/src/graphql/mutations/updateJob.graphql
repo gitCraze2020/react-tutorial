@@ -1,0 +1,12 @@
+mutation UpdateJob ($id: Int!, $name: String!) {
+    updateJob  (  jobToUpdate: {id: $id, name: $name }) {
+        errors {
+            field
+            message
+        }
+        job {
+            id
+            name
+        }
+    }
+}
