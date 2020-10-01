@@ -1,4 +1,4 @@
-  import gql from 'graphql-tag';
+import gql from 'graphql-tag';
 import * as Urql from 'urql';
 export type Maybe<T> = T | null;
 export type Exact<T extends { [key: string]: unknown }> = { [K in keyof T]: T[K] };
@@ -78,6 +78,17 @@ export type UpdateJobMutation = (
   ) }
 );
 
+export type GetJobsQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type GetJobsQuery = (
+  { __typename?: 'Query' }
+  & { jobs: Array<(
+    { __typename?: 'Job' }
+    & Pick<Job, 'id' | 'name'>
+  )> }
+);
+
 
 export const UpdateJobDocument = gql`
     mutation UpdateJob($id: Int!, $name: String!) {
@@ -96,4 +107,16 @@ export const UpdateJobDocument = gql`
 
 export function useUpdateJobMutation() {
   return Urql.useMutation<UpdateJobMutation, UpdateJobMutationVariables>(UpdateJobDocument);
+};
+export const GetJobsDocument = gql`
+    query getJobs {
+  jobs {
+    id
+    name
+  }
+}
+    `;
+
+export function useGetJobsQuery(options: Omit<Urql.UseQueryArgs<GetJobsQueryVariables>, 'query'> = {}) {
+  return Urql.useQuery<GetJobsQuery>({ query: GetJobsDocument, ...options });
 };
