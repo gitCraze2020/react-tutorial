@@ -1,11 +1,11 @@
-import { ThemeProvider, CSSReset, ColorModeProvider } from '@chakra-ui/core'
+import { ThemeProvider, CSSReset } from '@chakra-ui/core'
 
 import theme from '../theme'
 import React from 'react';
 import { Provider } from 'urql';
 import { createUrqlClient } from "../utils/createUrqlClient"
 
-function MyApp({ Component, pageProps }) {
+function MyApp({ Component, pageProps } : any) {
 
     // // START remedy to a browser warning: "Warning: Prop className did not match"
     // // this remedy was found in the example provided by the MUI team,
@@ -22,10 +22,8 @@ function MyApp({ Component, pageProps }) {
   return (
       <Provider value={createUrqlClient}>
         <ThemeProvider theme={theme}>
-          {/*<ColorModeProvider>*/}
             <CSSReset />
             <Component {...pageProps} />
-          {/*</ColorModeProvider>*/}
         </ThemeProvider>
       </Provider>
   )
