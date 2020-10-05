@@ -16,6 +16,7 @@ export type Query = {
   __typename?: 'Query';
   hello: Scalars['String'];
   jobs: Array<Job>;
+  ctxBody: Job;
 };
 
 export type Job = {
@@ -58,6 +59,11 @@ export type JobInput = {
   name: Scalars['String'];
 };
 
+export type Subscription = {
+  __typename?: 'Subscription';
+  jobChangeSubscription: Job;
+};
+
 export type UpdateJobMutationVariables = Exact<{
   id: Scalars['Int'];
   name: Scalars['String'];
@@ -87,6 +93,17 @@ export type GetJobsQuery = (
     { __typename?: 'Job' }
     & Pick<Job, 'id' | 'name'>
   )> }
+);
+
+export type GetJobChangesSubscriptionVariables = Exact<{ [key: string]: never; }>;
+
+
+export type GetJobChangesSubscription = (
+  { __typename?: 'Subscription' }
+  & { jobChangeSubscription: (
+    { __typename?: 'Job' }
+    & Pick<Job, 'id' | 'name'>
+  ) }
 );
 
 
@@ -119,4 +136,16 @@ export const GetJobsDocument = gql`
 
 export function useGetJobsQuery(options: Omit<Urql.UseQueryArgs<GetJobsQueryVariables>, 'query'> = {}) {
   return Urql.useQuery<GetJobsQuery>({ query: GetJobsDocument, ...options });
+};
+export const GetJobChangesDocument = gql`
+    subscription getJobChanges {
+  jobChangeSubscription {
+    id
+    name
+  }
+}
+    `;
+
+export function useGetJobChangesSubscription<TData = GetJobChangesSubscription>(options: Omit<Urql.UseSubscriptionArgs<GetJobChangesSubscriptionVariables>, 'query'> = {}, handler?: Urql.SubscriptionHandler<GetJobChangesSubscription, TData>) {
+  return Urql.useSubscription<GetJobChangesSubscription, TData, GetJobChangesSubscriptionVariables>({ query: GetJobChangesDocument, ...options }, handler);
 };

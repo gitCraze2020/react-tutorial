@@ -3,10 +3,12 @@ import { Formik, Form } from 'formik';
 import { FormControl, FormLabel, Input, FormErrorMessage, Box, Button } from '@chakra-ui/core';
 import Wrapper from '../components/Wrapper';
 import InputField from '../components/InputField';
-import {useUpdateJobMutation} from "../generated/graphql";
-import {setErrors} from "@graphql-tools/utils";
+import {useGetJobChangesSubscription, useUpdateJobMutation} from "../generated/graphql";
 import {toErrorMap} from "../utils/toErrorMap";
 import {useRouter} from "next/router";
+import {withUrqlClient} from "next-urql";
+import createUrqlClient from "../utils/createUrqlClient";
+import {isServer} from "../utils/isServer";
 
 interface jobsProps {  }
 
@@ -18,9 +20,22 @@ const Jobs: React.FC<jobsProps> = ({}) => {
     // so we name it updateOneJob. once named, you can call that in the onSubmit element below
     // and pass in the values for the parameters as defined in the useMutation's graphql syntax
     const [,updateOneJob] = useUpdateJobMutation();
+    const [{ data }] = useGetJobChangesSubscription();
     const router = useRouter();
     return (
         <Wrapper sizeProfile="small">
+            <Box>
+                <div>        <>
+                    { !data ? (
+                        <div>no data</div>
+                    ) : (
+                            <div key = {data.jobChangeSubscription.id}>{data.jobChangeSubscription.id}: {data.jobChangeSubscription.name}</div>
+                        )
+                    }
+                </>
+                </div>
+            </Box>
+            <Box>
 
         <Formik initialValues={{id: -1, name: "job name here"}}
             // onSubmit={(submitValues) => {
@@ -75,7 +90,8 @@ const Jobs: React.FC<jobsProps> = ({}) => {
                 else {
                     // that worked, navigate to home page - as example response to show the use of navigation
                     // using next/router
-                    router.push("/");
+                    //router.push("/");
+                    console.log("update successful")
                 }
             }}
         >
@@ -101,8 +117,9 @@ const Jobs: React.FC<jobsProps> = ({}) => {
                 </Form>
             )}
         </Formik>
+            </Box>
         </Wrapper>
     );
 }
 
-export default Jobs;
+export default withUrqlClient(createUrqlClient, {ssr: false}) (Jobs);

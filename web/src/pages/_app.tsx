@@ -2,8 +2,6 @@ import { ThemeProvider, CSSReset } from '@chakra-ui/core'
 
 import theme from '../theme'
 import React from 'react';
-import { Provider } from 'urql';
-import { createUrqlClient } from "../utils/createUrqlClient"
 
 function MyApp({ Component, pageProps } : any) {
 
@@ -20,12 +18,10 @@ function MyApp({ Component, pageProps } : any) {
     // // END remedy to a browser error
 
   return (
-      <Provider value={createUrqlClient}>
         <ThemeProvider theme={theme}>
             <CSSReset />
             <Component {...pageProps} />
         </ThemeProvider>
-      </Provider>
   )
 }
 

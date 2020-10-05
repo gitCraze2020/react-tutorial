@@ -1,0 +1,6 @@
+subscription getJobChanges {
+    jobChangeSubscription {
+        id
+        name
+    }
+}
