@@ -5,10 +5,6 @@
 import { defaultExchanges,  ssrExchange, subscriptionExchange} from 'urql';
 import { SubscriptionClient } from 'subscriptions-transport-ws';
 import {isServer} from "./isServer";
-// global.createdUrqlClient = true;
-
-// import WebSocket from 'ws';
-// import fetch from 'isomorphic-fetch';
 
 console.log("Global.createdUrqlClient: ", global.createdUrqlClient);
 import ssrWs from 'ws';
@@ -106,8 +102,8 @@ console.log("isServer: ", isServer());
     // console.log("wsping^^^^^^^^^^^^^^^^^^^^^^^");
     //
     const ws = process.browser ? WebSocket : ssrWs;
-console.log("ws: ", ws);
-console.log("^^^^ native websocket: ", process.browser);
+// console.log("ws: ", ws);
+// console.log("^^^^ native websocket: ", process.browser);
     const createUrqlSubcriptionClient = new SubscriptionClient(
         ws_url, {
             lazy: true,
@@ -141,7 +137,7 @@ console.log("^^^^ native websocket: ", process.browser);
         ]
     });
     global.createdUrqlClient = true;
-console.log("at end of createUrqlClient, global.createdUrqlClient: ", global.createdUrqlClient);
+// console.log("at end of createUrqlClient, global.createdUrqlClient: ", global.createdUrqlClient);
 
 // console.log("createUrqlClient: ", createUrqlClient);
     // console.log("createUrqlClient^^^^^^^^^^^^^^^^^^^^^^^");
