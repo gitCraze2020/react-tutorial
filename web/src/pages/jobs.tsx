@@ -14,8 +14,6 @@ import {withUrqlClient} from "next-urql";
 import createUrqlClient from "../utils/createUrqlClient";
 // import {isServer} from "../utils/isServer";
 import {SimpleGrid, Stack} from "@chakra-ui/core/dist";
-import SubscriptionDrivenJobsTable from "../components/SubscriptionDrivenJobsTable";
-import {any} from "prop-types";
 import StateHooksFunctionalComponent from "../components/StateHooksFunctionalComponent";
 
 interface jobsProps {  }
@@ -144,13 +142,12 @@ const Jobs: React.FC<jobsProps> = ({}) => {
         </Wrapper>
             <SimpleGrid id="jobs" columns={1}>
             <Box marginTop={8}>
-                <h1>Pre-loaded data</h1>
+                <h1>Jobs to run</h1>
                 { !jobsData && jobsFetching ? (
                     <div>Loading...</div>
                 ) : (
                     <>
                         <StateHooksFunctionalComponent jobs={jobsData? jobsData?.jobs : undefined}/>
-                    {/*<SubscriptionDrivenJobsTable/>*/}
                     </>
                 )}
             </Box>
@@ -161,8 +158,3 @@ const Jobs: React.FC<jobsProps> = ({}) => {
 }
 
 export default withUrqlClient(createUrqlClient, {ssr: false}) (Jobs);
-// {/*{subscriptionJobsList?.jobChangeSubscription}*/}
-// <SubscriptionDrivenJobsTable list={jobsData ? jobsData : initialData}/>
-// {/*<Box>*/}
-// {/*    <div key = {data.jobChangeSubscription.id}>{data.jobChangeSubscription.id}: {data.jobChangeSubscription.name}</div>*/}
-// {/*</Box>*/}
