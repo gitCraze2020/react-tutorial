@@ -32,6 +32,7 @@
   },
   "dependencies": {
     "@types/express-ws": "^3.0.0",
+    "@types/kafka-node": "^3.0.0",
     "@types/ws": "^7.2.7",
     "apollo-server-express": "^2.16.1",
     "argon2": "^0.26.2",
@@ -47,6 +48,7 @@
     "graphql-subscriptions": "^1.1.0",
     "ioredis": "^4.17.3",
     "isomorphic-unfetch": "^3.1.0",
+    "kafka-node": "^5.0.0",
     "nodemailer": "^6.4.11",
     "pg": "^8.3.0",
     "reflect-metadata": "^0.1.13",

@@ -2,7 +2,7 @@ import "dotenv-safe/config";
 import "reflect-metadata";
 import expressWs from 'express-ws';
 import express from 'express';
-import { ApolloServer } from 'apollo-server-express';
+import { PubSub, ApolloServer } from 'apollo-server-express';
 import { buildSchema } from 'type-graphql';
 import { HelloResolver } from "./resolvers/hello";
 import { JobResolver } from "./resolvers/job";
@@ -10,12 +10,13 @@ import { Job } from "./entities/Job";
 import cors from "cors";
 import { createServer } from "http";
 
-
 export const sampleJobs: Job[] = [{id: 0, name: "first job"}, {id: 1, name: "second job"}];
 
 const main = async () => {
     // const app = express();
     // add graphql endpoint by instantiating an instance and calling applyMiddleware
+
+    const pubsub_in_ctx = new PubSub();
     const graphQLServer = new ApolloServer ({
         // buildSchema returns a Promise with a graphql schema,
         // which is why we 'await' it:
@@ -25,10 +26,9 @@ const main = async () => {
             resolvers: [HelloResolver, JobResolver],
             validate: false // apolloServer uses something like class validator, which we do without
         }),
-        context: ({req, res}) => ( { req, res })
+        context: ({req, res}) => ( { req, res, pubsub_in_ctx})
         // context: ({req, res}) => ( { req, res, samples: sampleJobs, em: orm.em })
     });
-
 
     const wsInstance = expressWs(express() , undefined, {leaveRouterUntouched: true} );
     const app = wsInstance.app;
@@ -79,6 +79,7 @@ const main = async () => {
 
     const port = process.env.PORT as string;
 
+
     const httpServer = createServer(app);
     graphQLServer.installSubscriptionHandlers(httpServer);
 
@@ -99,7 +100,7 @@ const main = async () => {
         console.log("Server listening on port: ", port);
     });
     //
-    // console.log(" wsInstance.getWss(): ", wsInstance.getWss());
+
 }
 
 

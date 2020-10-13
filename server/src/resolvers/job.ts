@@ -13,8 +13,9 @@ import {
 } from "type-graphql";
 import { Job } from "../entities/Job";
 import { sampleJobs } from "..";
-import pubsub from "./pubSub";
 import { Context } from "graphql-composer";
+import {KafkaClientSingleTopic} from "../data/KafkaClientSingleTopic";
+
 // import { sleep } from "../utils/sleep";
 
 @InputType()
@@ -34,6 +35,7 @@ class FieldError {
     message: string
 }
 
+
 @ObjectType()
 class JobResponse {
     @Field( () => [FieldError], {nullable: true})
@@ -43,14 +45,53 @@ class JobResponse {
     job?: Job;
 }
 
+
 // define a single schema that provides hello
 @Resolver()
 export class JobResolver {
+    kafkaClient: KafkaClientSingleTopic;
+    // psctx: any;
+
+    initKafkaClient(publish: Publisher<Job>) {
+        // console.log("constructor, this.kafkaClient:", this.kafkaClient);
+        // console.log("initKafkaClient received ctx: ", ctx);
+        // this.psctx = ctx.pubsub_in_ctx;
+        // console.log("initKafkaClient set this.psctx: ", this.psctx);
+        this.kafkaClient = new KafkaClientSingleTopic({topicName: "jobs", pubsub: publish, onMessage: this.onMessage});
+    }
+
+    async onMessage (job: Job, pubsub_from_ctx: Publisher<Job>) : Promise<void> {
+        console.log("onMessage received from kafka: " , job);
+        try {
+            console.log("onMessage pubsub_from_ctx: " , pubsub_from_ctx);
+            await pubsub_from_ctx(job);
+            console.log("onMessage published: " , job);
+            // await publish(job);
+            // await ctx.req.pubsub.publish('jobChangeSubscription', job);
+        }
+        catch (e) {
+            console.log("onMessage caught error: " , e);
+        }
+        // await Ctx.req.pubsub.publish('jobChangeSubscription', job);
+    }
+
+
     @Query(() => [Job])
-    jobs() {
+    async jobs() : Promise<Job[]> {
         // async jobs() {
     //     await sleep(8000);
         return sampleJobs;
+    }
+
+
+    @Query(() => String)
+    async hello(
+        // @Ctx() ctx: any,
+        @PubSub("jobChangeSubscription") publish: Publisher<Job>,
+    ) {
+        //await ctx.req.pubsub.publish('jobChangeSubscription');
+        this.initKafkaClient(publish);
+        return "Initialized kafka client!";
     }
 
     @Mutation(() => JobResponse)
@@ -96,18 +137,18 @@ export class JobResolver {
         }
         sampleJobs[idx].name = jobName;
 
-console.log("updateJobName running pubsub on: ", sampleJobs[idx]);
-        // Publish the job so that the subscription can fire off
-        pubsub.publish('jobChangeSubscription', {
-            jobChangeSubscription: { ...sampleJobs[idx], jobName },
-        });
-
-
         return {
             job: sampleJobs[idx]
         };
         // .filter((job: Job) => job.id === jobId)
     }
+
+
+// console.log("updateJobName running pubsub on: ", sampleJobs[idx]);
+//         // Publish the job so that the subscription can fire off
+//         pubsub.publish('jobChangeSubscription', {
+//             jobChangeSubscription: { ...sampleJobs[idx], jobName },
+//         });
 
 
     @Mutation(() => JobResponse)
@@ -177,6 +218,14 @@ console.log("updateJobName running pubsub on: ", sampleJobs[idx]);
 
     }
 
+    // @PubSub("jobChangeSubscription") pubsub: Publisher<Job>,
+    // GetJobChangesSubscription: {
+    //     jobChangeSubscription: {
+    //         subscribe: () => pubsub.asyncIterator("jobChangeSubscription"),
+    //     },
+    // }
+    //
+
     @Subscription({
         topics: "jobChangeSubscription",
         // topics: ({ args, payload, context}) => args.topic
@@ -188,7 +237,7 @@ console.log("updateJobName running pubsub on: ", sampleJobs[idx]);
         @Root() jobPayload: Job,
         // @Args() args: NewJobArgs,
     ): Job {
-        console.log("updatedJob:", jobPayload);
+        console.log("updated Job:", jobPayload);
         if (!jobPayload) {
             jobPayload = new Job();
             jobPayload.id = 999;
