@@ -6,11 +6,8 @@ import { PubSub, ApolloServer } from 'apollo-server-express';
 import { buildSchema } from 'type-graphql';
 import { HelloResolver } from "./resolvers/hello";
 import { JobResolver } from "./resolvers/job";
-import { Job } from "./entities/Job";
 import cors from "cors";
 import { createServer } from "http";
-
-export const sampleJobs: Job[] = [{id: 0, name: "first job"}, {id: 1, name: "second job"}];
 
 const main = async () => {
     // const app = express();
