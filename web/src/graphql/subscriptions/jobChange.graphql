@@ -1,6 +1,25 @@
 subscription getJobChanges {
     jobChangeSubscription {
-        id
-        name
+        jobDefinition {
+            id
+            name
+            runCmd
+            runCmdArgs
+            customJobLabel
+            nextJobDefaultId
+            nextJobErrorDefaultId
+            nextJobOptions
+        }
+        jobActivity {
+            jobIdentifier {
+                id
+                name
+                jobInstanceId
+                resultSeqNum
+            }
+            logDateTime
+            logLevel
+            result
+        }
     }
 }

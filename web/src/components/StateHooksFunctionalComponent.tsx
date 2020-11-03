@@ -1,145 +1,109 @@
 import React from "react";
-import {Button, Form, Input, List} from "antd";
-import {Job, useGetJobChangesSubscription} from "../generated/graphql";
+import { List, ListItem, Text } from '@chakra-ui/core';
+// import { FormControl, FormLabel, Input, FormErrorMessage } from '@chakra-ui/core';
+// import {Button, Form, Input, List} from "antd";
+import {JobInfo, useGetJobChangesSubscription} from "../generated/graphql";
+import {Box, Flex, Stack} from "@chakra-ui/core/dist";
+import {number} from "prop-types";
+import {switchCase} from "@babel/types";
 // import React, {ChangeEvent, FormEvent, useEffect, useLayoutEffect, useState} from "react";
 // import {CombinedError, Operation} from "@urql/core";
 
 
 // see https://codersera.com/blog/react-hooks-with-typescript-use-state-and-use-effect-in-2020/
 
-type jobList = { [id: number]: Job } | undefined;
+type jobList = { [id: number]: JobInfo } | undefined;
 interface Props {
-    // type Dict = { [key: string]: string };
-    // const store: Record<string, string> = {};
     jobs: jobList;
 }
 
 const StateHooksFunctionalComponent: React.FC<Props> = ({jobs}) => {
-    // const MERGEJOB = "mergeJob: ";
     const OUTER = "OUTER: ";
-    // const HANDLESUSPEND = "handleSuspend: ";
-    // const HANDLESUBMIT = "handleSubmit: ";
-    // const ONNAMECHANGE = "onNameChange: ";
-    // const ONIDCHANGE = "onIdChange: ";
-    // const USEEFFECTMOUNT = "Mount: ";
-    // const USEEFFECTUNMOUNT = "UnMount: ";
-    // const USEEFFECTANY = "ANY Effect: ";
-    // const USEEFFECTNAME = "Name Effect: ";
 
-    const mergeJob = (newJob: Job) => {
+    const mergeJob = (newJob: JobInfo) => {
         if (!newJob) {
             console.error("argument is undefined, expected new job")
             return;
         }
-        // console.log(MERGEJOB, newJob);
+        // we intend to affect the state of this component, held in variables defined in Props
         var newJobsList: jobList = jobs;
         if (!newJobsList) {
-            newJobsList = { [newJob.id]: newJob };
+            newJobsList = { [newJob.jobDefinition.id]: newJob };
         }
         else {
-            newJobsList[newJob.id] = newJob;
+            // ID in graphql is carried as string; use the unary + operator to parse to number:
+            newJobsList[+newJob.jobDefinition.id] = newJob;
         }
         jobs = newJobsList;
     }
 
-
     if (!jobs) {
-        console.error(OUTER, "initializing jobs with FC local values");
-        jobs = [{id: 0, name: "update hardcoded zero"}, {id: 1, name: "update hardcoded one"}];
+        console.error(OUTER, "initializing jobs with an empty array");
+        jobs = [];
     }
-    // else {
-    //     Object.entries(jobs).map(([jobId, job]) => {
-    //         console.log(OUTER, "top id/name: ", jobId, job.name);
-    //     })
-    // }
-    // var subscriptionJobsList: GetJobChangesSubscription | undefined;
-
-    // console.log(OUTER, "Running useGetJobChangesSubscription()");
     const [{
         data: subscriptionList
         , fetching: subscriptionJobsFetching
-        // , stale: subscriptionJobsStale
-        // , error: subscriptionJobsCombinedError
-        // , extensions: subscriptionJobsRecordStringAny
-        // , operation: subscriptionJobsOperation
         }
     ] = useGetJobChangesSubscription();
 
     console.log(OUTER, "data: ", subscriptionList);
     console.log(OUTER, "fetching: ", subscriptionJobsFetching);
-    // console.log(OUTER, "stale: ", subscriptionJobsStale);
-    // console.log(OUTER, "error: ", subscriptionJobsCombinedError);
-    // console.log(OUTER, "extensions: ", subscriptionJobsRecordStringAny);
-    // console.log(OUTER, "operation: ", subscriptionJobsOperation);
 
 
     if (subscriptionList) {
         mergeJob(subscriptionList.jobChangeSubscription);
     }
-
-    // const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
-    //     console.log(HANDLESUBMIT, "handleSubmit e: ", e);
-    //     e.preventDefault();
-    // };
-
-    // useEffect(() => {
-    //     console.log(USEEFFECTMOUNT, "Component mounted");
-    //     return () => {
-    //         console.log(USEEFFECTUNMOUNT, "Component will be unmounted");
-    //     }
-    // }, []);
-
-    // useEffect(() => {
-    //     console.log(USEEFFECTANY, `subscriptionJobsList: ${subscriptionJobsList}, subscriptionJobsFetching: ${subscriptionJobsFetching}`);
-    //     if (subscriptionJobsList) {
-    //         console.log(USEEFFECTANY, `subscriptionJobsList.jobChangeSubscription: ${subscriptionJobsList?.jobChangeSubscription}, subscriptionJobsFetching: ${subscriptionJobsFetching}`);
-    //         // mergeJob(subscriptionJobsList.jobChangeSubscription);
-    //         // const newJob: Job = subscriptionJobsList.jobChangeSubscription;
-    //
-    //         console.log(USEEFFECTANY, ">>>");
-    //         jobs ? (
-    //             Object.entries(jobs).map(([jobId, job]) => {
-    //             console.log(USEEFFECTANY, " id/name: ", jobId, job.name);
-    //                 })
-    //             ) : (
-    //             console.log(USEEFFECTANY, " jobs undefined: ", jobs)
-    //         );
-    //         console.log(USEEFFECTANY,"^^^");
-    //         console.log(USEEFFECTANY,"subscriptionJobsFetching: ", subscriptionJobsFetching);
-    //     }
-    // });
-
-    // useEffect(() => {
-    //     console.log(USEEFFECTNAME, `subscriptionJobsList: ${subscriptionJobsList}, subscriptionJobsFetching: ${subscriptionJobsFetching}`);
-    //     console.log(USEEFFECTNAME, ">>>");
-    //     if (subscriptionJobsList) {
-    //         // mergeJob(subscriptionJobsList.jobChangeSubscription);
-    //         jobs ? (
-    //             Object.entries(jobs).map(([jobId, job]) => {
-    //                 console.log(USEEFFECTNAME, "id/name: ", jobId, job.name);
-    //             })
-    //         ) : (
-    //             console.log(USEEFFECTNAME, "jobs undefined: ", jobs)
-    //         );
-    //         console.log(USEEFFECTNAME, "^^^");
-    //         console.log(USEEFFECTNAME, "subscriptionJobsFetching: ", subscriptionJobsFetching);
-    //     }
-    // }, [name]);
-
     Object.entries(jobs).map(([jobId, job]) => {
-        console.log(OUTER, "bottom id/name: ", jobId, job.name);
+        console.log(OUTER, "bottom id/name: ", jobId, job.jobDefinition.name);
     })
     console.log(OUTER, "returning content...");
 
+    let logLevel: number;
+    // {/*// FATAL:100 ERROR:200 WARN:300 INFO:400 DEBUG:500 TRACE:600 ALL:Integer.MAX_VALUE*/}
+    let logLevelDefault: number = 1000;
+    let logColorDefault: string = "gray.200";
+    let logColorInfo: string = "teal.200";
+    let logColorWarning: string = "banana";
+    let logColorError: string = "tomato";
     return (
         <>
+            <Stack spacing={8}>
             <div>entries: {Object.entries(jobs).length}</div>
             <List >{
                 Object.entries(jobs).map( ([key, value]) => (
-                        <li>{value.id}: {value.name} </li>
+                    <>
+                    <p hidden>{ // not sure why the logLevel value shows on screen, but 'p hidden' is a workaround for it
+                        logLevel = value.jobActivity ? (
+                        value.jobActivity[0].logLevel ? value.jobActivity[0].logLevel : logLevelDefault
+                        ) : logLevelDefault}
+                    </p>
+                     <Flex key={value.jobDefinition.id} p={5} shadow="md" borderWidth="1px">
+                <ListItem color="green" key={value.jobDefinition.id}>
+                    <Box flex={1} bg={
+                        logLevel >= 500 ? ( logColorDefault ): (
+                            logLevel >= 400 ? ( logColorInfo ): (
+                                logLevel >= 300 ? ( logColorWarning ): (
+                                    logLevel >= 200 ? ( logColorError ): (
+                                        logColorDefault
+                                    )
+                                )
+                            )
+                        )
+                    } >
+                        <Text>{value.jobDefinition.id}: {value.jobDefinition.name}</Text>
+                        <Text>{!value.jobDefinition.runCmd ? null : (value.jobDefinition.runCmd)}</Text>
+                        <Text>{!value.jobDefinition.runCmdArgs ? null : (value.jobDefinition.runCmdArgs)}</Text>
+                        <Text>{!value.jobActivity ? null : (value.jobActivity[0].logDateTime)}</Text>
+                        <Text>{!value.jobActivity ? null : (value.jobActivity[0].result)}</Text>
+                    </Box>
+                    </ListItem>
+                    </Flex>
+                    </>
                 ))
             }
             </List>
+            </Stack>
             </>
     )
 

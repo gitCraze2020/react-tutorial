@@ -15,37 +15,57 @@ export type Scalars = {
 export type Query = {
   __typename?: 'Query';
   hello: Scalars['String'];
-  jobs: Array<Job>;
-  ctxBody: Job;
+  jobInfos: Array<JobInfo>;
 };
 
-export type Job = {
-  __typename?: 'Job';
-  id: Scalars['Int'];
+export type JobInfo = {
+  __typename?: 'JobInfo';
+  jobDefinition?: Maybe<JobDefinition>;
+  jobActivity?: Maybe<Array<JobActivity>>;
+};
+
+export type JobDefinition = {
+  __typename?: 'JobDefinition';
+  id: Scalars['Float'];
   name: Scalars['String'];
+  customJobLabel?: Maybe<Scalars['String']>;
+  runCmd?: Maybe<Scalars['String']>;
+  runCmdArgs?: Maybe<Scalars['String']>;
+  nextJobDefaultId?: Maybe<Scalars['Float']>;
+  nextJobErrorDefaultId?: Maybe<Scalars['Float']>;
+  nextJobOptions?: Maybe<Scalars['String']>;
+};
+
+export type JobActivity = {
+  __typename?: 'JobActivity';
+  jobIdentifier: JobRunIdentifier;
+  logDateTime?: Maybe<Scalars['String']>;
+  logLevel?: Maybe<Scalars['Int']>;
+  result?: Maybe<Scalars['String']>;
+};
+
+export type JobRunIdentifier = {
+  __typename?: 'JobRunIdentifier';
+  id: Scalars['Float'];
+  name: Scalars['String'];
+  jobInstanceId?: Maybe<Scalars['Float']>;
+  resultSeqNum?: Maybe<Scalars['Float']>;
 };
 
 export type Mutation = {
   __typename?: 'Mutation';
-  updateJobName: JobResponse;
   updateJob: JobResponse;
 };
 
 
-export type MutationUpdateJobNameArgs = {
-  name: Scalars['String'];
-  id: Scalars['Int'];
-};
-
-
 export type MutationUpdateJobArgs = {
-  jobToUpdate: JobInput;
+  jobDefinitionInput: JobInput;
 };
 
 export type JobResponse = {
   __typename?: 'JobResponse';
   errors?: Maybe<Array<FieldError>>;
-  job?: Maybe<Job>;
+  jobInfo?: Maybe<JobInfo>;
 };
 
 export type FieldError = {
@@ -55,18 +75,23 @@ export type FieldError = {
 };
 
 export type JobInput = {
-  id: Scalars['Int'];
+  id: Scalars['Float'];
   name: Scalars['String'];
+  customJobLabel?: Maybe<Scalars['String']>;
+  runCmd?: Maybe<Scalars['String']>;
+  runCmdArgs?: Maybe<Scalars['String']>;
+  nextJobDefaultId?: Maybe<Scalars['Float']>;
+  nextJobErrorDefaultId?: Maybe<Scalars['Float']>;
+  nextJobOptions?: Maybe<Scalars['String']>;
 };
 
 export type Subscription = {
   __typename?: 'Subscription';
-  jobChangeSubscription: Job;
+  jobChangeSubscription: JobInfo;
 };
 
 export type UpdateJobMutationVariables = Exact<{
-  id: Scalars['Int'];
-  name: Scalars['String'];
+  jobDefinition: JobInput;
 }>;
 
 
@@ -77,9 +102,19 @@ export type UpdateJobMutation = (
     & { errors?: Maybe<Array<(
       { __typename?: 'FieldError' }
       & Pick<FieldError, 'field' | 'message'>
-    )>>, job?: Maybe<(
-      { __typename?: 'Job' }
-      & Pick<Job, 'id' | 'name'>
+    )>>, jobInfo?: Maybe<(
+      { __typename?: 'JobInfo' }
+      & { jobDefinition?: Maybe<(
+        { __typename?: 'JobDefinition' }
+        & Pick<JobDefinition, 'id' | 'name' | 'runCmd' | 'runCmdArgs' | 'customJobLabel' | 'nextJobDefaultId' | 'nextJobErrorDefaultId' | 'nextJobOptions'>
+      )>, jobActivity?: Maybe<Array<(
+        { __typename?: 'JobActivity' }
+        & Pick<JobActivity, 'logDateTime' | 'logLevel' | 'result'>
+        & { jobIdentifier: (
+          { __typename?: 'JobRunIdentifier' }
+          & Pick<JobRunIdentifier, 'id' | 'name' | 'jobInstanceId' | 'resultSeqNum'>
+        ) }
+      )>> }
     )> }
   ) }
 );
@@ -89,9 +124,19 @@ export type GetJobsQueryVariables = Exact<{ [key: string]: never; }>;
 
 export type GetJobsQuery = (
   { __typename?: 'Query' }
-  & { jobs: Array<(
-    { __typename?: 'Job' }
-    & Pick<Job, 'id' | 'name'>
+  & { jobInfos: Array<(
+    { __typename?: 'JobInfo' }
+    & { jobDefinition?: Maybe<(
+      { __typename?: 'JobDefinition' }
+      & Pick<JobDefinition, 'id' | 'name' | 'runCmd' | 'runCmdArgs' | 'customJobLabel' | 'nextJobDefaultId' | 'nextJobErrorDefaultId' | 'nextJobOptions'>
+    )>, jobActivity?: Maybe<Array<(
+      { __typename?: 'JobActivity' }
+      & Pick<JobActivity, 'logDateTime' | 'logLevel' | 'result'>
+      & { jobIdentifier: (
+        { __typename?: 'JobRunIdentifier' }
+        & Pick<JobRunIdentifier, 'id' | 'name' | 'jobInstanceId' | 'resultSeqNum'>
+      ) }
+    )>> }
   )> }
 );
 
@@ -101,22 +146,51 @@ export type GetJobChangesSubscriptionVariables = Exact<{ [key: string]: never; }
 export type GetJobChangesSubscription = (
   { __typename?: 'Subscription' }
   & { jobChangeSubscription: (
-    { __typename?: 'Job' }
-    & Pick<Job, 'id' | 'name'>
+    { __typename?: 'JobInfo' }
+    & { jobDefinition?: Maybe<(
+      { __typename?: 'JobDefinition' }
+      & Pick<JobDefinition, 'id' | 'name' | 'runCmd' | 'runCmdArgs' | 'customJobLabel' | 'nextJobDefaultId' | 'nextJobErrorDefaultId' | 'nextJobOptions'>
+    )>, jobActivity?: Maybe<Array<(
+      { __typename?: 'JobActivity' }
+      & Pick<JobActivity, 'logDateTime' | 'logLevel' | 'result'>
+      & { jobIdentifier: (
+        { __typename?: 'JobRunIdentifier' }
+        & Pick<JobRunIdentifier, 'id' | 'name' | 'jobInstanceId' | 'resultSeqNum'>
+      ) }
+    )>> }
   ) }
 );
 
 
 export const UpdateJobDocument = gql`
-    mutation UpdateJob($id: Int!, $name: String!) {
-  updateJob(jobToUpdate: {id: $id, name: $name}) {
+    mutation UpdateJob($jobDefinition: JobInput!) {
+  updateJob(jobDefinitionInput: $jobDefinition) {
     errors {
       field
       message
     }
-    job {
-      id
-      name
+    jobInfo {
+      jobDefinition {
+        id
+        name
+        runCmd
+        runCmdArgs
+        customJobLabel
+        nextJobDefaultId
+        nextJobErrorDefaultId
+        nextJobOptions
+      }
+      jobActivity {
+        jobIdentifier {
+          id
+          name
+          jobInstanceId
+          resultSeqNum
+        }
+        logDateTime
+        logLevel
+        result
+      }
     }
   }
 }
@@ -127,9 +201,28 @@ export function useUpdateJobMutation() {
 };
 export const GetJobsDocument = gql`
     query getJobs {
-  jobs {
-    id
-    name
+  jobInfos {
+    jobDefinition {
+      id
+      name
+      runCmd
+      runCmdArgs
+      customJobLabel
+      nextJobDefaultId
+      nextJobErrorDefaultId
+      nextJobOptions
+    }
+    jobActivity {
+      jobIdentifier {
+        id
+        name
+        jobInstanceId
+        resultSeqNum
+      }
+      logDateTime
+      logLevel
+      result
+    }
   }
 }
     `;
@@ -140,8 +233,27 @@ export function useGetJobsQuery(options: Omit<Urql.UseQueryArgs<GetJobsQueryVari
 export const GetJobChangesDocument = gql`
     subscription getJobChanges {
   jobChangeSubscription {
-    id
-    name
+    jobDefinition {
+      id
+      name
+      runCmd
+      runCmdArgs
+      customJobLabel
+      nextJobDefaultId
+      nextJobErrorDefaultId
+      nextJobOptions
+    }
+    jobActivity {
+      jobIdentifier {
+        id
+        name
+        jobInstanceId
+        resultSeqNum
+      }
+      logDateTime
+      logLevel
+      result
+    }
   }
 }
     `;

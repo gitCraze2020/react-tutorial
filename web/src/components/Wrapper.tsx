@@ -1,7 +1,10 @@
 import React from 'react';
 import { Box } from '@chakra-ui/core';
 
-interface WrapperProps {
+
+export type WrapperVariant = "small" | "regular";
+
+export interface WrapperProps {
     sizeProfile?: "regular" | "small"
 }
 

@@ -1,12 +1,31 @@
-mutation UpdateJob ($id: Int!, $name: String!) {
-    updateJob  (  jobToUpdate: {id: $id, name: $name }) {
+mutation UpdateJob ($jobDefinition: JobInput!) {
+    updateJob  (jobDefinitionInput:  $jobDefinition ) {
         errors {
             field
             message
         }
-        job {
-            id
-            name
+        jobInfo {
+            jobDefinition {
+                id
+                name
+                runCmd
+                runCmdArgs
+                customJobLabel
+                nextJobDefaultId
+                nextJobErrorDefaultId
+                nextJobOptions
+            }
+            jobActivity {
+                jobIdentifier {
+                    id
+                    name
+                    jobInstanceId
+                    resultSeqNum
+                }
+                logDateTime
+                logLevel
+                result
+            }
         }
     }
 }

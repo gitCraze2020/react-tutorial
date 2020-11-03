@@ -3,26 +3,47 @@ import {
     Query,
     Mutation,
     Arg,
-    Int,
     InputType,
     Field,
     ObjectType,
     Subscription,
     Root,
-    Publisher, PubSub
+    Publisher, PubSub, Float
 } from "type-graphql";
-import { Job } from "../entities/Job";
+import {JobRunIdentifier, JobInfo, JobDefinition, JobActivity} from "../entities/Job";
 import {KafkaClientSingleTopic} from "../data/KafkaClientSingleTopic";
 
 // import { sleep } from "../utils/sleep";
 
 @InputType()
 class JobInput {
-    @Field(() => Int)
+    @Field(() => Float!)
     id: number
 
     @Field()
     name: string
+
+    @Field({nullable:true})
+    customJobLabel?: string
+
+    @Field({nullable:true})
+    runCmd?: string
+
+    @Field({nullable:true})
+    runCmdArgs?: string
+
+    @Field(() => Float, {nullable: true})
+    nextJobDefaultId?: number
+
+    @Field(() => Float, {nullable: true})
+    nextJobErrorDefaultId?: number
+
+    // TO DO: handle array of numbers passed through graphql and other structures.
+    // FOR NOW - PROTOTYPE STAGE - use a string of numbers comma separated
+    // @Field(() => [Int], {nullable: true})
+    @Field({nullable:true})
+    nextJobOptions?: string
+    // nextJobOptions?: [number]
 }
 
 @ObjectType()
@@ -39,22 +60,21 @@ class JobResponse {
     @Field( () => [FieldError], {nullable: true})
     errors?: FieldError[];
 
-    @Field( () => Job, {nullable: true})
-    job?: Job;
+    @Field( () => JobInfo, {nullable: true})
+    jobInfo?: JobInfo;
 }
 
 
-// define a single schema that provides hello
 @Resolver()
 export class JobResolver {
     kafkaClient: KafkaClientSingleTopic;
 
-    initKafkaClient(publish: Publisher<Job>) {
+    initKafkaClient(publish: Publisher<JobInfo>) {
         // await to ensure connection is established
-        this.kafkaClient = new KafkaClientSingleTopic({topicName: "jobs", pubsub: publish, onMessage: this.onMessage});
+        this.kafkaClient = new KafkaClientSingleTopic({topicName: "job-progress", pubsub: publish, onMessage: this.onMessage});
     }
 
-    async onMessage (job: Job, pubsub_from_ctx: Publisher<Job>) : Promise<void> {
+    async onMessage (job: JobInfo, pubsub_from_ctx: Publisher<JobInfo>) : Promise<void> {
         try {
             // console.log("onMessage pubsub_from_ctx: " , pubsub_from_ctx);
             await pubsub_from_ctx(job);
@@ -65,10 +85,22 @@ export class JobResolver {
         }
     }
 
-    @Query(() => [Job])
-    async jobs(
-        @PubSub("jobChangeSubscription") publish: Publisher<Job>,
-    ) : Promise<Job[]> {
+    // @Query(() => [JobInfo])
+    // async jobs(
+    //     @PubSub("jobChangeSubscription") publish: Publisher<JobInfo>,
+    // ) : Promise<JobInfo[]> {
+    //     if (!this.kafkaClient) {this.initKafkaClient(publish);}
+    //     // rather than returning data here,
+    //     // reset the offset on kafka, which will re-trigger the subscription
+    //     this.kafkaClient.setOffsetZero();
+    //     return [];
+    // }
+
+
+    @Query(() => [JobInfo])
+    async jobInfos(
+        @PubSub("jobChangeSubscription") publish: Publisher<JobInfo>,
+    ) : Promise<JobInfo[]> {
         if (!this.kafkaClient) {this.initKafkaClient(publish);}
         // rather than returning data here,
         // reset the offset on kafka, which will re-trigger the subscription
@@ -79,7 +111,7 @@ export class JobResolver {
 
     @Query(() => String)
     async hello(
-        @PubSub("jobChangeSubscription") publish: Publisher<Job>,
+        @PubSub("jobChangeSubscription") publish: Publisher<JobInfo>,
     ) {
         if (!this.kafkaClient) {this.initKafkaClient(publish);}
         return "Initialized kafka client!";
@@ -87,48 +119,66 @@ export class JobResolver {
 
     @Mutation(() => JobResponse)
     async updateJob (
-        @Arg("jobToUpdate") jobUpdate: JobInput,
-        @PubSub("jobChangeSubscription") publish: Publisher<Job>,
-    ) : Promise<JobResponse | null> {
+        @Arg("jobDefinitionInput") jobInput: JobInput,
+        @PubSub("jobChangeSubscription") publish: Publisher<JobInfo>,
+    ) : Promise<{ jobResponse: JobResponse }> {
         if (!this.kafkaClient) {this.initKafkaClient(publish);}
 
-        this.kafkaClient.publishToTopic(jobUpdate);
-
         //
-        // console.log("updateJob running graphql pubsub on: ", jobUpdate);
         // Publish the job so that the subscription can fire off
-        const payload: Job = jobUpdate;
-        await publish(payload);
-        // await pubsub.publish("jobChangeSubscription", payload);
-        // pubsub.publish('jobChangeSubscription', { jobChangeSubscription: { ...sampleJobs[idx] },});
-        // console.log("updateJob ran pubsub.publish of: ", payload);
+        var jobResponse: JobResponse = new JobResponse();
+        var jobIdentifier: JobRunIdentifier = new JobRunIdentifier();
+        jobIdentifier.id = jobInput.id;
+        jobIdentifier.name = jobInput.name;
+        var jobInfo: JobInfo = new JobInfo();
+        var jobActivity: JobActivity = new JobActivity();
+        jobActivity.jobIdentifier = jobIdentifier;
+        jobInfo.jobActivity = [jobActivity];
+        var jobDefinition: JobDefinition = new JobDefinition();
+        jobDefinition.id = jobInput.id;
+        jobDefinition.name = jobInput.name;
+        jobDefinition.runCmd = jobInput.runCmd;
+        jobDefinition.runCmdArgs = jobInput.runCmdArgs;
+        jobDefinition.customJobLabel = jobInput.customJobLabel;
+        jobDefinition.nextJobDefaultId = jobInput.nextJobDefaultId;
+        jobDefinition.nextJobErrorDefaultId = jobInput.nextJobErrorDefaultId;
+        jobDefinition.nextJobOptions = jobInput.nextJobOptions;
+        jobInfo.jobDefinition = jobDefinition;
 
-        // rather than returning data here,
-        // reset the offset on kafka, which will trigger the subscription
-        return { job: jobUpdate };
+        this.kafkaClient.publishToTopicJobs(jobInfo);
+        // publish(jobInfo);
+        await publish(jobInfo);
+
+        jobResponse.jobInfo = jobInfo
+        return { jobResponse: jobResponse };
     }
 
     @Subscription({
         topics: "jobChangeSubscription",
-        // topics: ({ args, payload, context}) => args.topic
-        // subscribe: ({args, context}) => { // pubsub.asyncIterator('jobChangeSubscription'),
-        //     return context.prisma.$subscribe.users({mutation_in: [args.mutationType]});
-        // },
     })
     jobChangeSubscription(
-        @Root() jobPayload: Job,
+        @Root() jobPayload: JobInfo,
         // @Args() args: NewJobArgs,
-    ): Job {
+    ): JobInfo {
         console.log("updated Job:", jobPayload);
-        if (!jobPayload) {
-            jobPayload = new Job();
-            jobPayload.id = 999;
-            jobPayload.name = "no proper value passed in, adding hard coded result for now";
-            console.log(jobPayload.name);
+        if (!jobPayload
+            || jobPayload.jobActivity === undefined
+            || jobPayload.jobActivity[0].jobIdentifier === undefined
+            || jobPayload.jobActivity[0].jobIdentifier.id === undefined) {
+            jobPayload = new JobInfo();
+            const ji: JobRunIdentifier = ({
+                id: 999
+                , name: "no proper value passed in, adding hard coded result for now(1)"
+            });
+            const jd: JobDefinition = ({
+                id: 999
+                , name: "no proper value passed in, adding hard coded result for now(2)"
+            });
+            const ja: JobActivity = new JobActivity() ; ja.jobIdentifier = ji;
+            jobPayload.jobActivity =[ ja ];
+            jobPayload.jobDefinition = jd;
+            console.log(jobPayload.jobDefinition.name);
         }
         return jobPayload;
     }
 }
-
-
-

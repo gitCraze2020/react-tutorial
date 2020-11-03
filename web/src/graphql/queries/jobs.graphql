@@ -1,6 +1,25 @@
 query getJobs {
-    jobs {
-        id
-        name
+    jobInfos {
+        jobDefinition {
+            id
+            name
+            runCmd
+            runCmdArgs
+            customJobLabel
+            nextJobDefaultId
+            nextJobErrorDefaultId
+            nextJobOptions
+        }
+        jobActivity {
+            jobIdentifier {
+                id
+                name
+                jobInstanceId
+                resultSeqNum
+            }
+            logDateTime
+            logLevel
+            result
+        }
     }
 }
